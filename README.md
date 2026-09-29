@@ -4,7 +4,7 @@ Practices a team of humans and agents actually runs on, packaged so you can inst
 one and keep it — or read one and steal the idea.
 
 Each is a `SKILL.md` plus, where it earns one, a small script. Everything here works
-on one machine, with no server and no account. Fourteen of the seventeen ship a
+on one machine, with no server and no account. Seventeen of the twenty ship a
 checker; all of them are stdlib Python 3.8+ or POSIX shell, with no install step.
 
 ## The skills
@@ -22,6 +22,9 @@ checker; all of them are stdlib Python 3.8+ or POSIX shell, with no install step
 
 | | |
 | --- | --- |
+| [board-loop](skills/board-loop/) | Claim before you build, one owner per surface, and someone other than the builder accepts. A `LANES.md` board and a script that warns on overlap instead of locking — and tells you who owns a path before you edit it. |
+| [cross-family-review](skills/cross-family-review/) | A change is judged by a model of a different family than its author, on four questions answered with what was checked. Grades the pairing honestly — and refuses to call it diverse on a model nobody observed. |
+| [harness-inbox](skills/harness-inbox/) | The coordination loop between sessions, minimally: a few acts with one meaning each, the inbox at every task boundary, and asks to a person with a tier and a clock. The read cursor never skips a message. |
 | [the-team-agreement](skills/the-team-agreement/) | The charter above the loop: the human is a member who sometimes wears an approver hat; stances, not stored autonomy levels; roles are aptitude, not authority; write work stays with whoever is accountable. |
 | [a-finding-is-not-a-fix-request](skills/a-finding-is-not-a-fix-request/) | A review finding is REQUIRED only if the spec would have demanded it *before the diff existed*. Everything else is a note that routes under the finder's name — and complying with an out-of-scope demand is the failure mode. |
 | [capture-rough-explore-once](skills/capture-rough-explore-once/) | How to take a half-formed idea from somebody and not ruin it. Capture verbatim, derive the title deterministically, then one explorer asking one question only the submitter may answer. |
