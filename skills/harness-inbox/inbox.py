@@ -7,7 +7,7 @@
     ./inbox.py [--file INBOX.jsonl] check --as <me> [--limit N]   what is new for me, oldest first
     ./inbox.py [--file INBOX.jsonl] open  --as <me>               directed acts still waiting on my answer
     ./inbox.py [--file INBOX.jsonl] due   --as <me>               my asks whose clock has run out
-    ./inbox.py [--file INBOX.jsonl] proceed --as <me> <ask-id> "<what you did>"
+    ./inbox.py [--file INBOX.jsonl] proceed --as <me> <ask-id> "<what you did>" --risk "<what could go wrong>"
     ./inbox.py [--file INBOX.jsonl] validate                      check every line
 
 Exit 0 on success, 1 when a rule refuses the send, 2 when the file cannot be read or
@@ -41,6 +41,12 @@ NEGATION = re.compile(r"^\W*(none|n/?a|tbd|todo|nothing|ok|-+)\W*$", re.I)
 
 class Refused(Exception):
     pass
+
+
+def good_ts(row):
+    """A timestamp is whole seconds since the epoch. Anything else, the clock cannot be read."""
+    ts = row.get("ts")
+    return isinstance(ts, int) and not isinstance(ts, bool) and ts >= 0
 
 
 def load(path):
@@ -118,6 +124,8 @@ def problems(row, rows_before):
     for k in ("id", "ts", "from", "to", "act", "body"):
         if row.get(k) in (None, ""):
             errs.append("%s is missing" % k)
+    if row.get("ts") not in (None, "") and not good_ts(row):
+        errs.append("ts %r is not whole seconds since the epoch" % (row.get("ts"),))
     if row.get("act") not in ACTS:
         errs.append("act %r is not one of %s" % (row.get("act"), ", ".join(ACTS)))
     to = row.get("to")
@@ -147,6 +155,12 @@ def problems(row, rows_before):
             errs.append("an ask needs --species (%s)" % ", ".join(SPECIES))
         if meta.get("tier") not in TIER_SECONDS:
             errs.append("an ask needs --tier (%s): the tier owns the clock" % ", ".join(TIER_SECONDS))
+    if act == "status_update" and meta.get("ask_outcome") == "proceeded_unanswered":
+        if meta.get("risk_accepted") is not True:
+            errs.append("proceeding without an answer accepts a risk: meta.risk_accepted must be true")
+        for k in ("risk", "chosen_approach"):
+            if not str(meta.get(k) or "").strip():
+                errs.append("proceeding without an answer records meta.%s" % k)
     if act == "wait" and row.get("reply_to") and row.get("reply_to") not in known:
         errs.append("wait names an act that is not in the inbox")
     if row.get("body") and NEGATION.match(row["body"]) and act not in ("accept", "wait"):
@@ -161,7 +175,7 @@ def show(row, rows=None):
         extra = " [%s/%s]" % (meta.get("species"), meta.get("tier"))
     if row.get("reply_to"):
         extra += " (re %s)" % row["reply_to"]
-    when = time.strftime("%H:%M", time.localtime(row.get("ts", 0)))
+    when = time.strftime("%H:%M", time.localtime(row["ts"])) if good_ts(row) else "??:??"
     return "%s %s  %s -> %s  %s%s: %s" % (row.get("id"), when, row.get("from"), row.get("to"),
                                           row.get("act"), extra, row.get("body"))
 
@@ -169,7 +183,8 @@ def show(row, rows=None):
 def parse_argv(argv):
     opts, args, i = {"file": "INBOX.jsonl"}, [], 0
     valued = {"--file": "file", "--as": "as", "--to": "to", "--act": "act", "--reply-to": "reply_to",
-              "--thread": "thread", "--species": "species", "--tier": "tier", "--limit": "limit"}
+              "--thread": "thread", "--species": "species", "--tier": "tier", "--limit": "limit",
+              "--risk": "risk"}
     while i < len(argv):
         a = argv[i]
         if a in valued:
@@ -219,7 +234,8 @@ def main(argv):
     if cmd in ("send", "proceed"):
         if cmd == "proceed":
             if len(args) != 2:
-                print("proceed needs <ask-id> \"<what you did>\"", file=sys.stderr)
+                print("proceed needs <ask-id> \"<what you did>\" --risk \"<what could go wrong>\"",
+                      file=sys.stderr)
                 return 2
             ask = by_id(rows).get(args[0])
             try:
@@ -231,6 +247,12 @@ def main(argv):
                 if limit is None:
                     raise Refused("%s is blocking: it holds until a person answers. Proceeding is "
                                   "not yours to decide" % args[0])
+                if not good_ts(ask):
+                    raise Refused("%s has no readable ts, so its clock cannot be read -- "
+                                  "run validate" % args[0])
+                if not (opts.get("risk") or "").strip():
+                    raise Refused("going ahead without an answer accepts a risk: name it with "
+                                  "--risk \"<what could go wrong>\"")
                 if deciding(rows, ask):
                     raise Refused("%s has a 'deciding' reply -- the person is on it; wait" % args[0])
                 left = ask["ts"] + limit - time.time()
@@ -241,7 +263,9 @@ def main(argv):
                 return 1
             row = {"id": new_id(rows), "ts": int(time.time()), "from": me, "to": ask["to"],
                    "act": "status_update", "body": "proceeded without an answer: " + args[1],
-                   "meta": {"ask_ref": ask["id"], "ask_outcome": "proceeded_unanswered"},
+                   "meta": {"ask_ref": ask["id"], "ask_outcome": "proceeded_unanswered",
+                            "risk_accepted": True, "risk": opts["risk"].strip(),
+                            "chosen_approach": args[1]},
                    "thread": ask.get("thread") or ask["id"]}
         else:
             if len(args) != 1:
@@ -311,11 +335,15 @@ def main(argv):
             t = TIER_SECONDS.get((r.get("meta") or {}).get("tier"))
             if t is None:
                 print("HOLDING  %s (blocking -- no clock; it waits for a person)" % show(r))
+            elif not good_ts(r):
+                print("UNREADABLE %s (ts is not a timestamp -- run validate; not counted as due)"
+                      % show(r))
             elif deciding(rows, r):
                 print("DECIDING %s (a person said they are on it)" % show(r))
             elif now >= r["ts"] + t:
                 due.append(r)
-                print("DUE      %s -- `proceed %s \"<what you did>\"`" % (show(r), r["id"]))
+                print("DUE      %s -- `proceed %s \"<what you did>\" --risk \"<what could go wrong>\"`"
+                      % (show(r), r["id"]))
         if not due:
             print("no ask has run out its clock")
         return 3 if due else 0

@@ -68,9 +68,11 @@ It also picks a **tier**, and the tier sets the clock:
 | `advisory` | 3 min | same |
 
 Going ahead is a recorded act, not a silence:
-`./inbox.py proceed --as you <ask-id> "what you did"` writes a `status_update`
-tied to the ask, saying it went ahead without an answer. The person comes back to
-a record of what happened, not to a mystery.
+`./inbox.py proceed --as you <ask-id> "what you did" --risk "what could go wrong"`
+writes a `status_update` tied to the ask, saying it went ahead without an answer.
+Going ahead accepts a risk, so the line records it: `risk_accepted`, the `risk`,
+and the `chosen_approach`. `proceed` refuses without `--risk`. The person comes
+back to a record of what happened and what it might cost, not to a mystery.
 
 A person who replies `wait` ("deciding, back in ten") stops the clock. They are
 on it, so the agent keeps waiting.
@@ -95,7 +97,7 @@ says how many are still waiting, and every line is reached in order.
 ./inbox.py check   --as bo [--limit N]   # new for me, oldest first; the cursor stops where I stopped
 ./inbox.py open    --as bo               # directed acts still waiting on my answer   (exit 3 if any)
 ./inbox.py due     --as ada              # my asks whose clock has run out            (exit 3 if any)
-./inbox.py proceed --as ada A0004 "surfaced 409 to the caller"
+./inbox.py proceed --as ada A0004 "surfaced 409 to the caller" --risk "callers expecting a retry see 409s"
 ./inbox.py validate                      # every line well formed
 ```
 
@@ -107,7 +109,7 @@ an ask whose clock ran out, the recorded proceed, and the finish.
 | Exit | Meaning |
 | --- | --- |
 | 0 | done; or `check` ran, whether or not anything was new |
-| 1 | refused: an accept of nothing, a decline with no reason, an ask with no tier, a `proceed` before the clock ran out or on a blocking ask |
+| 1 | refused: an accept of nothing, a decline with no reason, an ask with no tier, a `proceed` before the clock ran out, on a blocking ask, or with no `--risk`; `validate` found a problem |
 | 2 | the file cannot be read, or a line in it is not JSON |
 | 3 | `open` / `due`: something is waiting on you |
 
@@ -131,7 +133,7 @@ person's phone.
 
 ## The falsifier
 
-Thirty-three cases run on 2026-09-29, in sequence, against one file:
+Forty cases run on 2026-09-29, in sequence, against one file:
 
 | Case | Expected |
 | --- | --- |
@@ -152,6 +154,13 @@ Thirty-three cases run on 2026-09-29, in sequence, against one file:
 | an advisory ask the person answered with `wait` | DECIDING; `proceed` refused |
 | `resolve` on a handoff's thread | the handoff no longer shows in `open` |
 | `validate` on a clean file / a corrupt line | exit 0 / exit 2 |
+| `proceed` on a due ask with no `--risk`, or a blank one | exit 1, "accepts a risk" |
+| `proceed` with `--risk` | the line carries `risk_accepted: true`, `risk`, `chosen_approach` |
+| `validate` on a `proceeded_unanswered` line missing those three | exit 1, each named |
+| `validate` on `"ts":"not-a-timestamp"`, `true`, `-5`, `1.5` | exit 1, "not whole seconds since the epoch" |
+| `due` with that unreadable `ts` | shown UNREADABLE, never DUE; no crash |
+| `proceed` on that ask | exit 1, "its clock cannot be read" |
+| `check` showing that line | prints it with `??:??`; no crash |
 
 ---
 
