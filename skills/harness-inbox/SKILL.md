@@ -18,8 +18,7 @@ This skill replaces the guessing with three things:
 3. **A clock on questions to a person**, so an agent neither waits forever on
    someone who is away nor quietly goes ahead with nothing written down.
 
-It is the smallest version of the protocol musterd runs, and deliberately no more
-than that.
+It is a small protocol in musterd's shape, and deliberately no more than that.
 
 ## The acts
 
@@ -29,8 +28,8 @@ than that.
 | `status_update` | what I am doing, or just did | — |
 | `request_help` | unblock me | an answer: `accept` or `decline` |
 | `handoff` | this work is yours now | an answer: `accept` or `decline` |
-| `challenge` | justify this, or reconsider it | an answer, with evidence |
-| `steer` | change direction; the newest steer to you replaces older ones | — |
+| `challenge` | justify this, or reconsider it | an answer; by convention, with evidence |
+| `steer` | change direction; by convention, the newest steer to you replaces older ones | — |
 | `ask` | a question for a **person**, with a species and a tier | an answer, or the clock runs out |
 | `accept` / `decline` | answer one specific act | `--reply-to` that act; a decline says why |
 | `wait` | paused; on an ask, "I'm deciding, check back" | — |
@@ -39,6 +38,12 @@ than that.
 `accept` is not "finished". Accepting a handoff means *I have it*. `resolve` is
 what says the work landed. Keeping the two apart is the difference between a
 thread that is taken and one that is done.
+
+The script checks who may answer what. It does not check the conventions in the
+table: nothing verifies that a `challenge` answer carries evidence, and an older
+`steer` stays in the file next to the newer one. musterd also has `defer` (shelve
+a goal) and `insight` (a finding worth keeping); they are left out here because
+one file between two sessions has no goals or findings to keep.
 
 ## The loop
 
@@ -63,9 +68,12 @@ It also picks a **tier**, and the tier sets the clock:
 
 | Tier | Clock | When it runs out |
 | --- | --- | --- |
-| `blocking` | none | **hold**. The asker waits, however long. Use it for the irreversible. |
+| `blocking` | hold until answered | **hold**. The asker waits, however long. Use it for the irreversible. |
 | `standard` | 5 min | the asker may go ahead, and **records that it did** |
 | `advisory` | 3 min | same |
+
+musterd adds a 15-minute check-in to a blocking ask, so a hold is looked at
+again. The script does not: a blocking ask here holds with no reminder.
 
 Going ahead is a recorded act, not a silence:
 `./inbox.py proceed --as you <ask-id> "what you did" --risk "what could go wrong"`
@@ -133,7 +141,7 @@ person's phone.
 
 ## The falsifier
 
-Forty cases run on 2026-09-29, in sequence, against one file:
+Twenty-four cases run on 2026-09-29, in sequence, against one file:
 
 | Case | Expected |
 | --- | --- |

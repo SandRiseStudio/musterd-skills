@@ -5,15 +5,14 @@ description: Before a change merges, have it judged by a model of a different fa
 
 # cross-family-review
 
-Two agents running the same model agree for the same reasons. They were trained
-on the same data, they share the same blind spots, and they prefer their own
+Two agents running the same model tend to agree for the same reasons. They were
+trained the same way, so they tend to share blind spots and to prefer their own
 kind of answer. So when one reviews the other's work, the approval is weaker
-evidence than it looks: the reviewer is most likely to miss exactly what the
-author missed.
+evidence than it looks: the reviewer is likely to miss what the author missed.
 
 The fix is not a better prompt. A stance prompt ("be critical", "you are a
-security reviewer") is the weakest decorrelator there is. What helps, strongest
-first:
+security reviewer") helps least. What helps, roughly strongest
+first in our experience:
 
 1. **Different evidence.** The reviewer reads whole files and runs the thing, not
    just the diff the author chose to show.
@@ -49,7 +48,9 @@ The pairing is graded, not assumed:
 
 **Family is the leading run of letters** in the model id: `claude-opus-5` is
 `claude`, `gpt-6` is `gpt`, `grok-4` is `grok`. It is crude on purpose. A rule
-you can apply by eye beats a lookup table that goes stale.
+you can apply by eye beats a lookup table that goes stale. Strip a provider
+prefix first (`us.anthropic.claude-…`, `openai/gpt-…`): the script does not, and
+would read the family as `us` or `openai`.
 
 **A person on the team does not make the agents diverse.** One human reviewer
 plus five Claude agents is still a Claude monoculture among the agents. The

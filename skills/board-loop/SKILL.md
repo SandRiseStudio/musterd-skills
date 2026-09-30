@@ -1,26 +1,29 @@
 ---
 name: board-loop
-description: Claim before you build, one owner per surface, and someone other than the builder accepts. A LANES.md convention plus a stdlib script that opens, claims, releases, submits, accepts and declines lanes, warns when two claimed lanes may touch the same files, and tells you who owns a path before you edit it. Use when two or more agents (or an agent and a person) work in one repo, when work is being duplicated or thrown away, or when "done" keeps meaning "I think I finished".
+description: Claim before you build, one owner per scope, and someone other than the builder accepts. A LANES.md convention plus a stdlib script that opens, claims, releases, submits, accepts and declines lanes, warns when two claimed lanes may touch the same files, and tells you who owns a path before you edit it. Use when two or more agents (or an agent and a person) work in one repo, when work is being duplicated or thrown away, or when "done" keeps meaning "I think I finished".
 ---
 
 # board-loop
 
 Put three agents on one repo with a list of tasks and they will each read the
-list, each pick the most obvious task, and each build it. Two of those three
-changes get thrown away. Nobody did anything wrong; they all read the same list.
+list, each pick the most obvious task, and each build it. Often two of those
+three changes get thrown away. Nobody did anything wrong; they all read the same list.
 
 A task list is a menu. What stops the collision is a **claim**: a line that says
 *this work is mine, and these are the files it touches*, written *before* anyone
 starts editing.
+
+A **lane** is one unit of work with one owner and a scope: the globs of the
+files it touches. The board is the list of lanes.
 
 ## The loop
 
 1. **Look at the board.** `./lanes.py board`. Review debt comes first, because
    work waiting for acceptance is work that is finished but not yet trusted.
 2. **Claim one lane before you touch the code.** `./lanes.py claim L-004 --as you`,
-   or `open "<title>" --surface <globs> --claim --as you` if it is not on the
+   or `open "<title>" --scope <globs> --claim --as you` if it is not on the
    board. Reading the board is not claiming.
-3. **Build only inside your surface.** Before editing a file you are unsure about,
+3. **Build only inside your scope.** Before editing a file you are unsure about,
    `./lanes.py who <path>`.
 4. **Submit with evidence.** `./lanes.py submit L-004 --as you --evidence "PR #9 @ abc123"`.
    Evidence is what landed, not "done".
@@ -37,7 +40,7 @@ starts editing.
 different lane, or ask them to hand it off. "We both own it" means nobody is
 accountable for the merge.
 
-**Every lane names its surface**, the globs of the files it owns. Without one, you
+**Every lane names its scope**, the globs of the files it owns. Without one, you
 cannot tell two lanes apart, and `who` has nothing to answer with.
 
 **Overlap is a warning, never a lock.** When a claim may touch files another
@@ -48,7 +51,7 @@ WARNING: L-002 (src/upload/*.test.ts) may overlap L-001 owned by ada (src/upload
 -- talk to them before you edit it
 ```
 
-A lock would be wrong half the time, because globs overlap on paper far more often
+A lock would often be wrong, because globs overlap on paper far more often
 than edits collide in practice. A warning at claim time costs a message. A
 collision found at merge time costs one person's afternoon.
 
@@ -70,13 +73,13 @@ nobody made.
 ## L-003 Rate-limit the export endpoint
 - state: claimed
 - owner: claude-a
-- surface: src/api/export.ts
+- scope: src/api/export.ts
 - story: Exports stop timing out for everyone when one team exports a year of data
 ```
 
 States: `open` → `claimed` → `awaiting_acceptance` → `done`, or back to `claimed`
 on a decline, or back to `open` on a release. `abandoned` is for work nobody will
-do. `story` is optional: one line an outsider would understand.
+do; no command sets it, so write `- state: abandoned` by hand and run `check`. `story` is optional: one line an outsider would understand.
 
 Everything outside the `## L-nnn` sections, and any line in a section the script
 does not recognise, is kept as written. Edit by hand if you like, and run
@@ -90,7 +93,7 @@ does not recognise, is kept as written. Edit by hand if you like, and run
 ./lanes.py board                        # review debt first, then in progress, then open
 ./lanes.py check                        # validate; prints overlaps as WARNINGs
 ./lanes.py who src/api/export.ts        # which claimed lane covers this path
-./lanes.py open "<title>" --surface "src/a.ts,src/b/**" [--claim --as you]
+./lanes.py open "<title>" --scope "src/a.ts,src/b/**" [--claim --as you]
 ./lanes.py claim | release  <id> --as you
 ./lanes.py submit  <id> --as you --evidence "PR #9 @ abc123"
 ./lanes.py accept  <id> --as them [--self]
@@ -124,13 +127,13 @@ it. It means somebody typed "nick".
 
 ## The falsifier
 
-Twenty-seven cases run on 2026-09-29, in sequence, against one board:
+Sixteen cases run on 2026-09-29, in sequence, against one board:
 
 | Case | Expected |
 | --- | --- |
 | a move on a board that does not exist | exit 2, "`open` creates it" |
-| `open` with no `--surface` | exit 1 |
-| claiming a lane whose surface may overlap a claimed one | exit 0, WARNING naming the other owner |
+| `open` with no `--scope` | exit 1 |
+| claiming a lane whose scope may overlap a claimed one | exit 0, WARNING naming the other owner |
 | claiming a lane someone else owns | exit 1, "take a different lane, or ask them to hand it off" |
 | any move with no `--as` | exit 1, "a move nobody made" |
 | `who` on a path two claimed lanes cover | exit 0, both owners listed |

@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""A lane board in one Markdown file: claim before you build, one owner per surface,
+"""A lane board in one Markdown file: claim before you build, one owner per scope,
 someone else accepts.
 
     ./lanes.py [--file LANES.md] check                 validate the board
     ./lanes.py [--file LANES.md] board                 render it, review debt first
     ./lanes.py [--file LANES.md] who <path>            which claimed lane covers a path
-    ./lanes.py [--file LANES.md] open "<title>" --surface <glob>[,<glob>...] [--claim --as <name>]
+    ./lanes.py [--file LANES.md] open "<title>" --scope <glob>[,<glob>...] [--claim --as <name>]
     ./lanes.py [--file LANES.md] claim <id> --as <name>
     ./lanes.py [--file LANES.md] release <id> --as <name>
     ./lanes.py [--file LANES.md] submit <id> --as <name> --evidence "<PR / commit / link>"
@@ -19,7 +19,7 @@ Overlap between claimed lanes is printed as a WARNING and never changes the exit
 code: it is a prompt to talk, not a lock. Python 3.8+, stdlib only.
 
 THE FILE. One `## <id> <title>` heading per lane, then `- key: value` lines:
-state, owner, surface, and -- as the lane moves -- evidence, accepted_by, note.
+state, owner, scope, and -- as the lane moves -- evidence, accepted_by, note.
 Anything else in the file (a preamble, your own notes) is kept as written.
 """
 
@@ -29,7 +29,7 @@ import sys
 import tempfile
 
 STATES = ("open", "claimed", "awaiting_acceptance", "done", "abandoned")
-KEYS = ("state", "owner", "surface", "story", "evidence", "accepted_by", "unconfirmed", "note")
+KEYS = ("state", "owner", "scope", "story", "evidence", "accepted_by", "unconfirmed", "note")
 HEAD = re.compile(r"^## (L-\d+)\s+(.+?)\s*$")
 FIELD = re.compile(r"^- ([a-z_]+):\s*(.*?)\s*$")
 NEGATION = re.compile(r"^\W*(none|n/?a|tbd|todo|nothing|-+)\W*$", re.I)
@@ -75,8 +75,8 @@ def render_file(pre, lanes):
     return "\n".join(out)
 
 
-def surfaces(lane):
-    return [s.strip() for s in lane["fields"].get("surface", "").split(",") if s.strip()]
+def scopes(lane):
+    return [s.strip() for s in lane["fields"].get("scope", "").split(",") if s.strip()]
 
 
 # ---------- globs --------------------------------------------------------------------------
@@ -119,13 +119,13 @@ def may_overlap(a, b):
 
 
 def overlaps(lanes, lane):
-    """[(other lane, glob pair)] for every claimed-or-awaiting lane whose surface may overlap."""
+    """[(other lane, glob pair)] for every claimed-or-awaiting lane whose scope may overlap."""
     found = []
     for o in lanes:
         if o is lane or o["fields"].get("state") not in ("claimed", "awaiting_acceptance"):
             continue
-        for a in surfaces(lane):
-            for b in surfaces(o):
+        for a in scopes(lane):
+            for b in scopes(o):
                 if may_overlap(a, b):
                     found.append((o, a, b))
     return found
@@ -144,8 +144,8 @@ def problems(lanes):
         if st not in STATES:
             errs.append("%s: state %r is not one of %s" % (lid, st, ", ".join(STATES)))
             continue
-        if not surfaces(l):
-            errs.append("%s: no surface -- a lane with no surface cannot be told apart from any other" % lid)
+        if not scopes(l):
+            errs.append("%s: no scope -- a lane with no scope cannot be told apart from any other" % lid)
         if st in ("claimed", "awaiting_acceptance", "done") and not f.get("owner"):
             errs.append("%s: %s with no owner" % (lid, st))
         if st == "open" and f.get("owner"):
@@ -204,11 +204,11 @@ def move(lanes, cmd, args, opts):
     if cmd == "open":
         if not args:
             raise Refused("open needs a title")
-        if not opts.get("surface"):
-            raise Refused("open needs --surface: which files does this lane own?")
+        if not opts.get("scope"):
+            raise Refused("open needs --scope: which files does this lane own?")
         nums = [int(l["id"][2:]) for l in lanes]
         l = {"id": "L-%03d" % (max(nums, default=0) + 1), "title": args[0],
-             "fields": {"state": "open", "surface": opts["surface"]}, "extra": []}
+             "fields": {"state": "open", "scope": opts["scope"]}, "extra": []}
         lanes.append(l)
         if opts.get("claim"):
             if not name:
@@ -271,7 +271,7 @@ def board(lanes):
         out.append(label)
         for l in rows:
             who = l["fields"].get("owner", "")
-            out.append("  %s  %-40s %-12s %s" % (l["id"], l["title"][:40], who, ", ".join(surfaces(l))))
+            out.append("  %s  %-40s %-12s %s" % (l["id"], l["title"][:40], who, ", ".join(scopes(l))))
             if st == "awaiting_acceptance":
                 out.append("        evidence: %s" % l["fields"].get("evidence"))
         out.append("")
@@ -283,7 +283,7 @@ def board(lanes):
 
 def who(lanes, path):
     owners = [l for l in lanes if l["fields"].get("state") in ("claimed", "awaiting_acceptance")
-              and any(glob_re(g).match(path) for g in surfaces(l))]
+              and any(glob_re(g).match(path) for g in scopes(l))]
     return owners
 
 
@@ -292,7 +292,7 @@ def who(lanes, path):
 def parse_argv(argv):
     opts, args, i = {"file": "LANES.md"}, [], 0
     flags = {"--self": "self", "--claim": "claim"}
-    valued = {"--file": "file", "--as": "as", "--surface": "surface", "--evidence": "evidence", "--note": "note"}
+    valued = {"--file": "file", "--as": "as", "--scope": "scope", "--evidence": "evidence", "--note": "note"}
     while i < len(argv):
         a = argv[i]
         if a in flags:
