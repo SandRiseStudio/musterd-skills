@@ -51,9 +51,18 @@ checker; all of them are stdlib Python 3.8+ or POSIX shell, with no install step
 
 ## Installing one
 
-Every skill is a directory containing a `SKILL.md`. Copy the directory into wherever
-your harness reads skills from, or read the file and keep the idea — both are
-legitimate uses of this repo.
+```sh
+npx skills add SandRiseStudio/musterd-skills --list                 # see all twenty
+npx skills add SandRiseStudio/musterd-skills --skill board-loop     # install one
+```
+
+The [skills](https://www.npmjs.com/package/skills) CLI asks which harness to install
+for, or takes `-a <agent>`. Checked on 2026-09-30: all twenty listed, and `board-loop`
+installed for Claude Code with its script running.
+
+Without it: every skill is a directory containing a `SKILL.md`. Copy the directory
+into wherever your harness reads skills from, or read the file and keep the idea —
+both are legitimate uses of this repo.
 
 Harness skill paths differ more than their docs suggest, and at least one harness has
 no project-level skill directory at all. The measured table lives in
