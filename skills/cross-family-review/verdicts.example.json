@@ -1,0 +1,39 @@
+[
+  {
+    "change": "PR #412 — the retry wrapper around the upload client",
+    "author": { "model": "claude-opus-5", "source": "observed" },
+    "reviewer": { "model": "gpt-6", "source": "observed" },
+    "verdict": "decline",
+    "answers": {
+      "intent": "The issue asked for retries on 5xx only; the wrapper also retries 409, which the issue says must surface to the caller",
+      "principles": "CONTRIBUTING.md 'no silent retries on a conflict' — violated by upload.ts:88",
+      "usable": "Ran the new test file plus a local upload against the stub server: 3 retries on 503 as intended, and 3 on 409, which is the bug",
+      "feel": "n/a: no user-facing output; the retry is invisible to the person uploading"
+    },
+    "note": "Drop 409 from RETRYABLE in upload.ts:88 and add a test that a 409 reaches the caller on the first attempt"
+  },
+  {
+    "change": "commit 3f9e2a1 — the empty state for the search page",
+    "author": { "model": "gpt-6", "source": "observed" },
+    "reviewer": { "human": true },
+    "verdict": "accept",
+    "answers": {
+      "intent": "The ticket asked for a line that says what to try next; the page now suggests clearing filters, which matches",
+      "principles": "Checked against the copy guide's 'say what to do, not what went wrong' — it does",
+      "usable": "Searched for a nonsense term on the preview build; the empty state rendered and the clear-filters link worked",
+      "feel": "Read it on a phone-width window: the line wraps once and still reads as one thought"
+    }
+  },
+  {
+    "change": "PR #415 — the migration that adds the index",
+    "author": { "model": "claude-opus-5", "source": "observed" },
+    "reviewer": { "model": "gpt-6", "source": "declared" },
+    "verdict": "accept",
+    "answers": {
+      "intent": "The issue asked for an index on (team_id, created_at); the migration adds exactly that",
+      "principles": "Checked the migrations README: additive only, idempotent guard present",
+      "usable": "Ran the migration twice against a copy of the dev database; the second run is a no-op",
+      "feel": "n/a: a schema change with no surface anyone reads"
+    }
+  }
+]
