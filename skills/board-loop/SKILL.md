@@ -100,14 +100,14 @@ does not recognise, is kept as written. Edit by hand if you like, and run
 ./lanes.py decline <id> --as them --note "what to change, where"
 ```
 
-`--file` points at a board other than `./LANES.md`. Python 3.8+, stdlib only.
+`--file` points at a board other than `./LANES.md`; options go anywhere, as `--file x` or `--file=x`. Python 3.8+, stdlib only.
 Writes are atomic: a crash mid-write leaves the old file, never half of one.
 
 | Exit | Meaning |
 | --- | --- |
 | 0 | done, or the board is valid (warnings do not change this) |
 | 1 | refused: a rule stops the move, or `check` found the board invalid |
-| 2 | the file is missing or unreadable, or the command is malformed |
+| 2 | the file is missing or unreadable, or the command is malformed (an unknown option is malformed) |
 | 3 | `who`: **nobody has claimed this path**, which is not the same as "you may edit it" |
 
 **Hook it in.** An agent that ignores "claim before you build" in its
@@ -127,7 +127,8 @@ it. It means somebody typed "nick".
 
 ## The falsifier
 
-Sixteen cases run on 2026-09-29, in sequence, against one board:
+Eighteen cases, sixteen run on 2026-09-29 and the last two on 2026-09-30, in
+sequence, against one board:
 
 | Case | Expected |
 | --- | --- |
@@ -147,6 +148,8 @@ Sixteen cases run on 2026-09-29, in sequence, against one board:
 | resubmit after a decline, accepted by someone else | exit 0, `done` |
 | a hand-edited self-accept with no `unconfirmed: yes` | `check` exit 1 |
 | any move on a board that fails `check` | exit 1, "fix it first" |
+| `--file=other.md`, before or after the command | reads and writes `other.md`, never `./LANES.md` |
+| an unknown option, such as `--fiel` | exit 2, "unknown option"; nothing moves |
 
 ---
 
