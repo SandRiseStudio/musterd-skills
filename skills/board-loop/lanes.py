@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""A lane board in one Markdown file: claim before you build, one owner per scope,
+"""A lane board in one Markdown file: claim before you build, one owner per lane,
 someone else accepts.
 
     ./lanes.py [--file LANES.md] check                 validate the board

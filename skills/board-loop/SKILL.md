@@ -1,6 +1,6 @@
 ---
 name: board-loop
-description: Claim before you build, one owner per scope, and someone other than the builder accepts. A LANES.md convention plus a stdlib script that opens, claims, releases, submits, accepts and declines lanes, warns when two claimed lanes may touch the same files, and tells you who owns a path before you edit it. Use when two or more agents (or an agent and a person) work in one repo, when work is being duplicated or thrown away, or when "done" keeps meaning "I think I finished".
+description: Claim before you build, one owner per lane, and someone other than the builder accepts. A LANES.md convention plus a stdlib script that opens, claims, releases, submits, accepts and declines lanes, warns when two claimed lanes may touch the same files, and tells you who owns a path before you edit it. Use when two or more agents (or an agent and a person) work in one repo, when work is being duplicated or thrown away, or when "done" keeps meaning "I think I finished".
 ---
 
 # board-loop

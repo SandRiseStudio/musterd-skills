@@ -22,7 +22,7 @@ checker; all of them are stdlib Python 3.8+ or POSIX shell, with no install step
 
 | | |
 | --- | --- |
-| [board-loop](skills/board-loop/) | Claim before you build, one owner per scope, and someone other than the builder accepts. A `LANES.md` board and a script that warns on overlap instead of locking — and tells you who owns a path before you edit it. |
+| [board-loop](skills/board-loop/) | Claim before you build, one owner per lane, and someone other than the builder accepts. A `LANES.md` board and a script that warns on overlap instead of locking — and tells you who owns a path before you edit it. |
 | [cross-family-review](skills/cross-family-review/) | A change is judged by a model of a different family than its author, on four questions answered with what was checked. Grades the pairing honestly — and refuses to call it diverse on a model nobody observed. |
 | [harness-inbox](skills/harness-inbox/) | The coordination loop between sessions, minimally: a few acts with one meaning each, the inbox at every task boundary, and asks to a person with a tier and a clock. The read cursor never skips a message. |
 | [the-team-agreement](skills/the-team-agreement/) | The charter above the loop: the human is a member who sometimes wears an approver hat; stances, not stored autonomy levels; roles are aptitude, not authority; write work stays with whoever is accountable. |
