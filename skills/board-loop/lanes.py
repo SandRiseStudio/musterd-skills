@@ -13,7 +13,7 @@ someone else accepts.
     ./lanes.py [--file LANES.md] decline <id> --as <name> --note "<what to change>"
 
 Exit 0 on success, 1 when a rule refuses the move or the board is invalid, 2 when
-the file cannot be read or the command is malformed. `who` exits 3 when no claimed
+the file cannot be read or the command is malformed (an unknown option is malformed). `who` exits 3 when no claimed
 lane covers the path: "nobody owns this", which is not the same as "you own it".
 Overlap between claimed lanes is printed as a WARNING and never changes the exit
 code: it is a prompt to talk, not a lock. Python 3.8+, stdlib only.
@@ -295,13 +295,20 @@ def parse_argv(argv):
     valued = {"--file": "file", "--as": "as", "--scope": "scope", "--evidence": "evidence", "--note": "note"}
     while i < len(argv):
         a = argv[i]
+        key, eq, val = a.partition("=")
         if a in flags:
             opts[flags[a]] = True
+        elif eq and key in valued:
+            opts[valued[key]] = val
         elif a in valued:
             if i + 1 >= len(argv):
                 raise Refused("%s needs a value" % a)
             opts[valued[a]] = argv[i + 1]
             i += 1
+        elif re.match(r"^--[a-z]", a) and a != "--help":
+            # An option we do not know is refused, never read as an argument: an ignored
+            # --file= would quietly move lanes on ./LANES.md instead of the board you named.
+            raise Refused("unknown option %s" % key)
         else:
             args.append(a)
         i += 1

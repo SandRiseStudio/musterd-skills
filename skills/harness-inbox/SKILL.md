@@ -109,7 +109,7 @@ says how many are still waiting, and every line is reached in order.
 ./inbox.py validate                      # every line well formed
 ```
 
-`--file` points at a file other than `./INBOX.jsonl`. Each reader keeps its
+`--file` points at a file other than `./INBOX.jsonl`; options go anywhere, as `--file x` or `--file=x`. Each reader keeps its
 cursor in `INBOX.jsonl.cursor-<name>`. Python 3.8+, stdlib only.
 `INBOX.example.jsonl` is one short exchange: a status line, a request answered,
 an ask whose clock ran out, the recorded proceed, and the finish.
@@ -118,7 +118,7 @@ an ask whose clock ran out, the recorded proceed, and the finish.
 | --- | --- |
 | 0 | done; or `check` ran, whether or not anything was new |
 | 1 | refused: an accept of nothing, a decline with no reason, an ask with no tier, a `proceed` before the clock ran out, on a blocking ask, or with no `--risk`; `validate` found a problem |
-| 2 | the file cannot be read, or a line in it is not JSON |
+| 2 | the file cannot be read, or a line in it is not JSON; `validate` on a file that does not exist; an unknown option |
 | 3 | `open` / `due`: something is waiting on you |
 
 **Hook it in.** If your harness can run a command at the end of each turn or
@@ -141,7 +141,8 @@ person's phone.
 
 ## The falsifier
 
-Twenty-four cases run on 2026-09-29, in sequence, against one file:
+Twenty-six cases, twenty-four run on 2026-09-29 and the last two on 2026-09-30,
+in sequence, against one file:
 
 | Case | Expected |
 | --- | --- |
@@ -169,6 +170,8 @@ Twenty-four cases run on 2026-09-29, in sequence, against one file:
 | `due` with that unreadable `ts` | shown UNREADABLE, never DUE; no crash |
 | `proceed` on that ask | exit 1, "its clock cannot be read" |
 | `check` showing that line | prints it with `??:??`; no crash |
+| `validate --file=missing.jsonl` | exit 2, "not the same as valid"; never "ok -- 0 acts" |
+| an unknown option, such as `--bogus` | exit 2, "unknown option" |
 
 ---
 

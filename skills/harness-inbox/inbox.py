@@ -187,11 +187,18 @@ def parse_argv(argv):
               "--risk": "risk"}
     while i < len(argv):
         a = argv[i]
-        if a in valued:
+        key, eq, val = a.partition("=")
+        if eq and key in valued:
+            opts[valued[key]] = val
+        elif a in valued:
             if i + 1 >= len(argv):
                 raise Refused("%s needs a value" % a)
             opts[valued[a]] = argv[i + 1]
             i += 1
+        elif re.match(r"^--[a-z]", a) and a != "--help":
+            # An option we do not know is refused, never read as an argument: an ignored
+            # --file= would validate ./INBOX.jsonl and report it clean.
+            raise Refused("unknown option %s" % key)
         else:
             args.append(a)
         i += 1
@@ -213,6 +220,10 @@ def main(argv):
         return 0 if args else 2
     cmd, args = args[0], args[1:]
     path, me = opts["file"], opts.get("as")
+    if cmd == "validate" and not os.path.exists(path):
+        print("%s does not exist -- nothing to validate, which is not the same as valid" % path,
+              file=sys.stderr)
+        return 2
     try:
         rows = load(path)
     except (OSError, ValueError) as e:

@@ -57,15 +57,17 @@ npx skills add SandRiseStudio/musterd-skills --skill board-loop     # install on
 ```
 
 The [skills](https://www.npmjs.com/package/skills) CLI asks which harness to install
-for, or takes `-a <agent>`. Checked on 2026-09-30: all twenty listed, and `board-loop`
-installed for Claude Code with its script running.
+for, or takes `-a <agent>`. Checked on 2026-09-30 with `board-loop`: Claude Code reads
+it from `.claude/skills/`, Codex (0.159.2) and Cursor (cursor-agent 2026.09.28) from
+`.agents/skills/`. Each harness was asked whether it had the skill and named that path;
+in an empty folder, both Codex and Cursor said they did not have it.
 
 Without it: every skill is a directory containing a `SKILL.md`. Copy the directory
 into wherever your harness reads skills from, or read the file and keep the idea —
 both are legitimate uses of this repo.
 
-Harness skill paths differ more than their docs suggest, and at least one harness has
-no project-level skill directory at all. The measured table lives in
+Harness skill paths differ more than their docs suggest, and they move: one harness
+had no project-level skill directory on 2026-09-21 and had one by 2026-09-30. The measured table lives in
 [skill-home-and-provenance](skills/skill-home-and-provenance/), and it tells you to
 re-check it rather than trust it.
 
